@@ -68,7 +68,7 @@ trainer = Trainer(
     eval_dataset=tokenized_datasets["test"],
 )
 
-accelerator = Accelerator(fp16=args.fp16)
+accelerator = Accelerator()
 model, trainer = accelerator.prepare(model, trainer)
 
 trainer.train()
