@@ -1,5 +1,8 @@
+from accelerate import Accelerator
 from datasets import load_dataset
 from transformers import PreTrainedTokenizerFast, GPT2LMHeadModel, AutoConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling
+
+accelerator = Accelerator()
 
 context_length = 128
 tokenizer  = PreTrainedTokenizerFast(tokenizer_file="data/tokenizer.json")
@@ -35,8 +38,8 @@ config = AutoConfig.from_pretrained(
     bos_token_id=tokenizer.bos_token_id,
     eos_token_id=tokenizer.eos_token_id,
 )
+model = GPT2LMHeadModel(config).to("cuda")
 
-model = GPT2LMHeadModel(config)
 
 args = TrainingArguments(
     output_dir="simplegpt",
@@ -64,5 +67,8 @@ trainer = Trainer(
     train_dataset=tokenized_datasets["train"],
     eval_dataset=tokenized_datasets["test"],
 )
+
+accelerator = Accelerator(fp16=args.fp16)
+model, trainer = accelerator.prepare(model, trainer)
 
 trainer.train()
