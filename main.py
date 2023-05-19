@@ -25,7 +25,7 @@ def tokenize(element):
 
 
 tokenized_datasets = raw_datasets.map(
-    tokenize, batched=True, remove_columns=raw_datasets["train"].column_names
+    tokenize, batched=True, remove_columns=raw_datasets["train"].column_names, num_proc=16
 )
 
 tokenizer.add_special_tokens({"pad_token": "<pad>"})
