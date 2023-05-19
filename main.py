@@ -1,9 +1,10 @@
 from datasets import load_dataset
 from transformers import PreTrainedTokenizerFast, GPT2LMHeadModel, AutoConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling
 
-context_length = 1024
+context_length = 128
 tokenizer  = PreTrainedTokenizerFast(tokenizer_file="data/tokenizer.json")
 raw_datasets = load_dataset(path="data", data_files=["simplewiki_articles.txt"])
+raw_datasets = raw_datasets["train"].train_test_split(test_size=0.01)
 
 def tokenize(element):
     outputs = tokenizer(
@@ -26,7 +27,6 @@ tokenized_datasets = raw_datasets.map(
 
 tokenizer.add_special_tokens({"pad_token": "<pad>"})
 data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
-out = data_collator([tokenized_datasets["train"][i] for i in range(5)])
 
 config = AutoConfig.from_pretrained(
     "gpt2",
@@ -40,19 +40,19 @@ model = GPT2LMHeadModel(config)
 
 args = TrainingArguments(
     output_dir="simplegpt",
-    per_device_train_batch_size=32,
-    per_device_eval_batch_size=32,
+    per_device_train_batch_size=128,
+    per_device_eval_batch_size=128,
     evaluation_strategy="steps",
-    eval_steps=5_000,
-    logging_steps=5_000,
-    gradient_accumulation_steps=8,
+    eval_steps=50,
+    logging_steps=50,
+    gradient_accumulation_steps=4,
     num_train_epochs=1,
     weight_decay=0.1,
-    warmup_steps=1_000,
+    warmup_steps=100,
     lr_scheduler_type="cosine",
     learning_rate=5e-4,
-    save_steps=5_000,
-    fp16=False,
+    save_steps=50,
+    fp16=True,
     push_to_hub=False,
 )
 
@@ -62,7 +62,7 @@ trainer = Trainer(
     args=args,
     data_collator=data_collator,
     train_dataset=tokenized_datasets["train"],
-    # eval_dataset=tokenized_datasets["valid"],
+    eval_dataset=tokenized_datasets["test"],
 )
 
 trainer.train()
