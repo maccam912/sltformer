@@ -6,7 +6,7 @@ accelerator = Accelerator()
 
 context_length = 128
 tokenizer  = PreTrainedTokenizerFast(tokenizer_file="data/tokenizer.json")
-raw_datasets = load_dataset(path="data", data_files=["simplewiki_articles.txt"])
+raw_datasets = load_dataset("lsb/simplewiki2023")
 raw_datasets = raw_datasets["train"].train_test_split(test_size=0.01)
 
 def tokenize(element):
