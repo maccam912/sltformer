@@ -1,18 +1,20 @@
 from accelerate import Accelerator
 from datasets import load_dataset, DatasetDict
-from transformers import PreTrainedTokenizerFast, AutoConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling, GPTJModel
+from transformers import PreTrainedTokenizerFast, AutoConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling, GPT2LMHeadModel
 
 accelerator = Accelerator()
 
 context_length = 128
 tokenizer  = PreTrainedTokenizerFast(tokenizer_file="data/tokenizer.json")
+tokenizer.add_special_tokens({"pad_token": "<pad>"})
 
-raw_datasets = load_dataset("openwebtext", split="train", streaming=True)
+raw_datasets = load_dataset("openwebtext", streaming=True)
 
 def tokenize(element):
     outputs = tokenizer(
         element["text"],
         truncation=True,
+        padding=True,
         max_length=context_length,
         return_overflowing_tokens=True,
         return_length=True,
@@ -26,19 +28,19 @@ def tokenize(element):
 
 
 tokenized_datasets = raw_datasets.map(
-    tokenize, batched=True, remove_columns=raw_datasets.column_names
+    tokenize, batched=True, remove_columns=raw_datasets["train"].column_names
 )
 
 data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
 
 config = AutoConfig.from_pretrained(
-    "EleutherAI/gpt-j-6B",
+    "gpt2",
     vocab_size=len(tokenizer),
     n_ctx=context_length,
     bos_token_id=tokenizer.bos_token_id,
     eos_token_id=tokenizer.eos_token_id,
 )
-model = GPTJModel(config).to("cuda")
+model = GPT2LMHeadModel(config).to("cuda")
 
 
 args = TrainingArguments(
@@ -65,7 +67,7 @@ trainer = Trainer(
     tokenizer=tokenizer,
     args=args,
     data_collator=data_collator,
-    train_dataset=tokenized_datasets,
+    train_dataset=tokenized_datasets["train"],
     #eval_dataset=tokenized_datasets["test"],
 )
 
