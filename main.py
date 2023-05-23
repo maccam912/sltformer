@@ -1,6 +1,6 @@
 from accelerate import Accelerator
 from datasets import load_dataset, DatasetDict
-from transformers import PreTrainedTokenizerFast, AutoConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling, GPT2LMHeadModel
+from transformers import PreTrainedTokenizerFast, AutoConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling, RwkvForCausalLM
 
 accelerator = Accelerator()
 
@@ -34,19 +34,19 @@ tokenized_datasets = raw_datasets.map(
 data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
 
 config = AutoConfig.from_pretrained(
-    "gpt2",
+    "sgugger/rwkv-7b-pile",
     vocab_size=len(tokenizer),
     n_ctx=context_length,
     bos_token_id=tokenizer.bos_token_id,
     eos_token_id=tokenizer.eos_token_id,
 )
-model = GPT2LMHeadModel(config).to("cuda")
+model = RwkvForCausalLM(config).to("cuda")
 
 
 args = TrainingArguments(
-    output_dir="simplegpt",
-    per_device_train_batch_size=128,
-    per_device_eval_batch_size=128,
+    output_dir="simplerwkv",
+    per_device_train_batch_size=4,
+    per_device_eval_batch_size=4,
     evaluation_strategy="steps",
     eval_steps=50,
     logging_steps=50,
@@ -68,7 +68,7 @@ trainer = Trainer(
     args=args,
     data_collator=data_collator,
     train_dataset=tokenized_datasets["train"],
-    #eval_dataset=tokenized_datasets["test"],
+    eval_dataset=tokenized_datasets["train"].take(32),
 )
 
 
