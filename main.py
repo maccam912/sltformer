@@ -1,12 +1,12 @@
 from accelerate import Accelerator
 from datasets import load_dataset
-from transformers import PreTrainedTokenizerFast, GPT2LMHeadModel, AutoConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling
+from transformers import PreTrainedTokenizerFast, AutoConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling, GPTJModel
 
 accelerator = Accelerator()
 
 context_length = 128
 tokenizer  = PreTrainedTokenizerFast(tokenizer_file="data/tokenizer.json")
-raw_datasets = load_dataset("lsb/simplewiki2023")
+raw_datasets = load_dataset("openwebtext")
 raw_datasets = raw_datasets["train"].train_test_split(test_size=0.01)
 
 def tokenize(element):
@@ -28,17 +28,16 @@ tokenized_datasets = raw_datasets.map(
     tokenize, batched=True, remove_columns=raw_datasets["train"].column_names, num_proc=16
 )
 
-tokenizer.add_special_tokens({"pad_token": "<pad>"})
 data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
 
 config = AutoConfig.from_pretrained(
-    "gpt2",
+    "EleutherAI/gpt-j-6B",
     vocab_size=len(tokenizer),
     n_ctx=context_length,
     bos_token_id=tokenizer.bos_token_id,
     eos_token_id=tokenizer.eos_token_id,
 )
-model = GPT2LMHeadModel(config).to("cuda")
+model = GPTJModel(config).to("cuda")
 
 
 args = TrainingArguments(
