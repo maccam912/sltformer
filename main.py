@@ -1,13 +1,13 @@
 from accelerate import Accelerator
-from datasets import load_dataset
+from datasets import load_dataset, DatasetDict
 from transformers import PreTrainedTokenizerFast, AutoConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling, GPTJModel
 
 accelerator = Accelerator()
 
 context_length = 128
 tokenizer  = PreTrainedTokenizerFast(tokenizer_file="data/tokenizer.json")
-raw_datasets = load_dataset("openwebtext")
-raw_datasets = raw_datasets["train"].train_test_split(test_size=0.01)
+
+raw_datasets = load_dataset("openwebtext", split="train", streaming=True)
 
 def tokenize(element):
     outputs = tokenizer(
@@ -16,6 +16,7 @@ def tokenize(element):
         max_length=context_length,
         return_overflowing_tokens=True,
         return_length=True,
+        return_tensors="np",
     )
     input_batch = []
     for length, input_ids in zip(outputs["length"], outputs["input_ids"]):
@@ -25,7 +26,7 @@ def tokenize(element):
 
 
 tokenized_datasets = raw_datasets.map(
-    tokenize, batched=True, remove_columns=raw_datasets["train"].column_names, num_proc=16
+    tokenize, batched=True, remove_columns=raw_datasets.column_names
 )
 
 data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
@@ -56,6 +57,7 @@ args = TrainingArguments(
     save_steps=50,
     fp16=True,
     push_to_hub=False,
+    max_steps=10000,
 )
 
 trainer = Trainer(
@@ -63,9 +65,10 @@ trainer = Trainer(
     tokenizer=tokenizer,
     args=args,
     data_collator=data_collator,
-    train_dataset=tokenized_datasets["train"],
-    eval_dataset=tokenized_datasets["test"],
+    train_dataset=tokenized_datasets,
+    #eval_dataset=tokenized_datasets["test"],
 )
+
 
 accelerator = Accelerator()
 model, trainer = accelerator.prepare(model, trainer)
