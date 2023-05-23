@@ -206,6 +206,7 @@ version = "2.0.1"
 requires_python = ">=3.8"
 summary = "Powerful data structures for data analysis, time series, and statistics"
 dependencies = [
+    "numpy>=1.20.3; python_version < \"3.10\"",
     "numpy>=1.21.0; python_version >= \"3.10\"",
     "numpy>=1.23.2; python_version >= \"3.11\"",
     "python-dateutil>=2.8.2",
@@ -379,7 +380,7 @@ dependencies = [
 lock_version = "4.2"
 cross_platform = true
 groups = ["default"]
-content_hash = "sha256:62a12bd3653f23611fccfe8abccd5578d8eb720bf4ac2136282d899b82ed94b2"
+content_hash = "sha256:f2249818695cca07c1a00d99f5bde1c9a8ad921ce8a873efff058cfb605544b0"
 
 [metadata.files]
 "accelerate 0.19.0" = [

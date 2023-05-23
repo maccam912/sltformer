@@ -12,5 +12,5 @@ dependencies = [
     "accelerate>=0.19.0",
     "setuptools>=67.7.2",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.8"
 license = {text = "MIT"}
